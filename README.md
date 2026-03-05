@@ -18,12 +18,12 @@ finitely many solutions.
 Full documentation and examples can be found
 at [https://msolve.lip6.fr](https://msolve.lip6.fr).  
 Source code and installation instructions for
-[msolve](https://msolve.lip6.fr) can be found at
+[msolve](https://msolve.lip6.fr) can be found at  
 [https://github.com/algebraic-solving/msolve](https://github.com/algebraic-solving/msolve).
 
 ## Installation instructions
 
-- Install [msolve](https://msolve.lip6.fr)
+- Install [msolve](https://msolve.lip6.fr)  
 - Install the file interface between [msolve](https://msolve.lip6.fr)
   and `maple` which is given here:  
   [https://github.com/algebraic-solving/msolve/blob/master/interfaces/msolve-to-maple-file-interface.mpl](https://github.com/algebraic-solving/msolve/blob/master/interfaces/msolve-to-maple-file-interface.mpl)  
@@ -35,11 +35,13 @@ Source code and installation instructions for
   line to your `.mapleinit` file
   which should be at the root of your home directory.  
   `libname:=savelibname,libname:`   (e.g.
-  `libname="/home/<your-login>/libs`)
+  `libname="/home/<your-login>/libs`)  
 - add the following line to you `.mapleinit` file   
-  `kernelopts(includepath=<src_folder>):`
+  `kernelopts(includepath=<src_folder>):`  
   where `src_folder` is the string containing the absolute path to the
-  folder containing the sources of `RAGlib`. 
+  folder containing the sources of `RAGlib`.  
 - after launching `maple`, just read the file `rag.mm`. 
+
+## Basic usage
 
 

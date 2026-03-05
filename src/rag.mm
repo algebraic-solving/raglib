@@ -266,12 +266,17 @@ end proc;
 
 FindGenericLineRegular:=proc(eqs, F, lc, singminors, vars,opts:={})
 local rr, hyp, J, B, n, v, i, j, minors, deg, gendeg, ll, isbounded,
-newll, dF:
+newll, dF, verb:
 
   if type(subs(opts, "isbounded"), integer) then 
     isbounded:=subs(opts, "isbounded");
   else 
     isbounded:=0:
+  end if;
+  if type(subs(opts, "verb"), integer) then 
+    verb:=subs(opts, "verb");
+  else 
+    verb:=0:
   end if;
   dF:=[seq(F[i]+lc[i],i=1..nops(F))]:
 ################################
@@ -286,7 +291,9 @@ newll, dF:
 ################################
 
   for i from 1 to nops(vars) do 
-    printf("+");
+    if verb >= 1 then 
+      printf("+");
+    end if;
     if not(member(vars[i], F)) then 
       hyp        := vars[i]:
       deg, minors := TestGenericLineDegreeRegular([op(eqs),op(dF)], vars, hyp, opts):
@@ -304,7 +311,9 @@ newll, dF:
   ll:=[[seq(1, i=1..n)]]:
   while true do 
     for i from 1 to nops(ll) do 
-      printf("+");
+      if verb>= 1 then 
+        printf("+");
+      end if;
       hyp         := add(ll[i][j]*vars[j], j=1..n):
       deg, minors := TestGenericLineDegreeRegular([op(eqs),op(dF)], vars, hyp, opts):
       if deg=gendeg or (deg >= 0 and isbounded > 0)  then
@@ -535,7 +544,14 @@ end proc;
 
 ComputeBoundsRegular:=proc(Equations, Fam, Positive, NotNull, vars, 
                     hyp, minors, gendeg, opts:={})
-local vvar, ls, rd, sols, rr, lF, lhyp, gb, i, j;
+local vvar, ls, rd, sols, rr, lF, lhyp, gb, i, j, verb;
+
+    if type(subs(opts, "verb"), integer) then 
+      verb:=subs(opts, "verb");
+    else 
+      verb:=0:
+    end if;
+
     rd:=rand(1..65521):
     if gendeg = 0 then 
       sols := [0, []]:
@@ -561,7 +577,7 @@ local vvar, ls, rd, sols, rr, lF, lhyp, gb, i, j;
       if HasOverLap(rr) = false then 
         rr := ConstructFibers(rr, hyp, [op(Positive), op(NotNull)]);
       else 
-        printf("[Overlap Regular]");
+        if verb> = 1 then printf("[Overlap Regular]"); end if;
         gb := MSolveGroebner([op(Equations), op(Fam), op(minors),
               hyp-rag_sep_elem], 0, [op(vars), rag_sep_elem],
               opts union
@@ -631,7 +647,14 @@ end proc;
 ElimComputeBoundsSingular:=proc(Equations, Fam, Positive, NotNull, vars, 
                     hyp, vminors, gendeg, opts:={})
 local rd, minors, singminors, i, pol, gb, nsols, OldDigits, toadd, lgb, sols, 
-lF, nsols2, rr, j, lhyp, k, vvar, ls;
+lF, nsols2, rr, j, lhyp, k, vvar, ls, verb;
+
+    if type(subs(opts, "verb"), integer) then 
+      verb:=subs(opts, "verb");
+    else 
+      verb:=0:
+    end if;
+
     rd:=rand(1..65521):
     singminors := vminors[2];
 
@@ -687,7 +710,7 @@ lF, nsols2, rr, j, lhyp, k, vvar, ls;
       if HasOverLap(rr) = false then 
         rr := ConstructFibers(rr, hyp, [op(Positive), op(NotNull)]);
       else 
-        printf("Overlap Singular");
+        if verb>=1 then printf("Overlap Singular"); end if;
         rr := ManageOverLapComputeBoundsSingular(Equations, Fam, singminors, minors, 
               gendeg, lgb, hyp, Positive, NotNull, vars, opts): 
       end if;
@@ -801,7 +824,7 @@ lF, nsols2, rr, j, lhyp, k, vvar, ls;
       if HasOverLap(rr) = false then 
         rr := ConstructFibers(rr, hyp, [op(Positive), op(NotNull)]);
       else 
-        printf("Overlap Singular");
+        if verb >= 1 then printf("Overlap Singular"); end if;
         rr := ManageOverLapComputeBoundsSingular(Equations, Fam, singminors, minors, 
               gendeg, lgb, hyp, Positive, NotNull, vars, opts): 
       end if;
@@ -1321,7 +1344,7 @@ NewInequalities, newvars, tsols, Fam, sols, Positive, NotNull;
   NotNull:=remove(member, Inequations, FamNotNull):
   if verb>=1 then printf("[b:") end if;
   hyp, bounds := ComputeBounds(Equations, Fam, Positive, NotNull, vars, opts);
-  printf(" -> %a, %a", hyp, bounds);
+  if verb>=1 then printf(" -> %a, %a", hyp, bounds); end if;
   if verb>=1 then printf("]") end if;
   for i from 1 to nops(bounds) do
       v               := indets(hyp)[1];
@@ -1400,14 +1423,6 @@ NewFamNotNull, isempty, newsols, isbounded;
   end if;
 
   if nops(Equations) + nops(Fam) <= nops(vars) then 
-    #if verb>=1 then printf("[%d,%d,c",nops(vars),nops(Fam)) end if;
-    #cp          := FamCriticalPoints(Equations, FamPositive, FamNotNull, 
-    #                              Inequalities, Inequations, vars, opts);
-    #sols        := cp;
-    #if nops(sols) > 0 and isempty >0 then 
-    #  return sols;
-    #fi;
-    #if verb>=1 then printf("]") end if;
     sols := UnboundedComponents(Equations, FamPositive, FamNotNull, 
               Inequalities, Inequations, vars, opts):
     if nops(sols) > 0 and isempty >0 then 

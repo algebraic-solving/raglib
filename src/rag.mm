@@ -30,9 +30,11 @@ TODO:
 - better choices of constraints in the incremental solving procedure
 **)
 
+# The msolve library should installed, compiled and its binary should
+# be accessible from your PATH
 with(MSolve);
 
-read"/home/safey/software/devrag/src/multi-modular.mm":
+$include<multi-modular.mm>: 
 
 ComputeMaximalMinors:=proc(M)
 local i, rows, nr, nc, lc, l, minors, a, b, _l, _pol, _p;
@@ -1169,6 +1171,10 @@ local upol, f, uroots, i, sq, sols, newpol, p, mid;
     if not(member(-1, map(sign, subs(vars[1]=mid, Inequalities))))
        then 
       sols:=[op(sols), [vars[1]=[mid, mid]]];
+    end if;
+  else 
+    if not(member(-1, map(sign, subs(vars[1]=0, Inequalities)))) then
+      sols:=[[vars[1]=[0,0]]]:
     end if;
   end if;
   return sols;

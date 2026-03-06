@@ -1662,4 +1662,19 @@ midsols, verb, sols, lsigns, _l, nc, isempty;
   return sols;
 end proc:
 
+PointsPerComponents:=proc(eqs, pos, ineqs, opts)
+local isempty, _l, newopts;
 
+  if type(subs(opts, "isempty"), integer) then 
+    isempty:=subs(opts, "isempty");
+  else 
+    isempty:=0:
+  end if;
+
+  if isempty = 0 then 
+    return SemiAlgebraicSolve(eqs, pos, ineqs, opts);
+  else 
+    newopts:=map(_l->if lhs(_l)="isempty" then lhs(_l)=0 else _l fi, opts);
+    return SemiAlgebraicSolve(eqs, pos, ineqs, newopts);
+  end if;
+end proc;

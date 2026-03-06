@@ -48,7 +48,17 @@ At the moment, `RAGlib` provides two main functions:
 - `HasRealSolutions(eqs, pos, ineqs)` where eqs, pos, ineqs are lists
     of polynomials encoding equality, positivity and non-vanishing
     constraints respectively.   
+    It decides whether the set of real solutions to the input
+    constraints is empty or not. In case of emptiness, it returns an
+    empty list, otherwise, it returns a list of witness points.  
+    All such points are encoded by isolating boxes. 
 - `PointsPerComponents(eqs, pos, ineqs)` where eqs, pos, ineqs are lists
     of polynomials encoding equality, positivity and non-vanishing
     constraints respectively.  
+    It returns a list of points (encoded with isolating boxes) meeting
+    all connected components of the set of real solutions to the input
+    polynomial constraints. 
+
+For instance, the call 
+``PointsPerComponents([x*y-1], [x^2+y^2-4], []);``
 

@@ -1663,7 +1663,7 @@ midsols, verb, sols, lsigns, _l, nc, isempty;
 end proc:
 
 
-HasRealSolutions:=proc(eqs, pos, ineqs, opts)
+HasRealSolutions:=proc(eqs, pos, ineqs, opts:={})
 local isempty, _l, newopts;
 
   if type(subs(opts, "isempty"), integer) then 
@@ -1680,7 +1680,7 @@ local isempty, _l, newopts;
   end if;
 end proc;
 
-PointsPerComponents:=proc(eqs, pos, ineqs, opts)
+PointsPerComponents:=proc(eqs, pos, ineqs, opts:={})
 local isempty, _l, newopts;
 
   if type(subs(opts, "isempty"), integer) then 

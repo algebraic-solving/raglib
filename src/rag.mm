@@ -1127,12 +1127,14 @@ end proc:
 
 UnivariateSolveFamily:=proc(Equations, Fam, Inequalities, Inequations, vars)
 local g, upol, f, uroots, i, sq, sols, q, newpol, p, mid;
+  lprint(args);
   g:=0:
   for i from 1 to nops(Equations) do 
     g:=gcd(g, Equations[i]):
   end do;
   if degree(g)=0 then return []; end if;
 
+  if nops(Equations) > 0 then 
   for i  from 1 to nops(Inequalities) do
     q:=gcd(g, Inequalities[i]):
     if degree(q)>0 then
@@ -1148,6 +1150,7 @@ local g, upol, f, uroots, i, sq, sols, q, newpol, p, mid;
     end if;
     g:=gcd(g, Inequations[i]):
   end do;
+  end if;
   if degree(g)=0 then return []; end if;
 
   #Now, we search for real roots of g which satisfy the constraints.
@@ -1208,12 +1211,11 @@ local g, upol, f, uroots, i, sq, sols, q, newpol, p, mid;
   end if;
   sols:=[]:
   for i from 1 to nops(uroots)-1 do 
-    if subs(vars[1]=uroots[i][1], upol)*subs(vars[1]=uroots[i][2], upol)<=0 then  
-      mid:=SmallMidRational(uroots[i][2], uroots[i+1][1]);
-      if not(member(-1, map(sign, subs(vars[1]=mid, Inequalities))))
-        then 
-        sols:=[op(sols), [vars[1]=[mid,mid]]];
-      end if;
+    mid:=SmallMidRational(uroots[i][2], uroots[i+1][1]);
+    lprint(evalf(mid));
+    if not(member(-1, map(sign, subs(vars[1]=mid, Inequalities))))
+      then 
+      sols:=[op(sols), [vars[1]=[mid,mid]]];
     end if;
   end do;
   if nops(uroots) > 0 then 
@@ -1440,7 +1442,7 @@ NewFamNotNull, isempty, newsols, isbounded;
   Fam:=sort(Fam, (a, b)->degree(a)<=degree(b)):
   sols:=[];
   if nops(vars) = 1 then 
-    return UnivariateSolveFamily(Equations, Fam, Inequalities, Inequations, vars); 
+    return UnivariateSolveFamily(Equations, FamPositive, Inequalities, Inequations, vars); 
   end if;
   if nops(Equations) = nops(vars) then 
     sols:=MSolveRealRoots(Equations, vars, [op(FamPositive),

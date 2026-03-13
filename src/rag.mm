@@ -1426,7 +1426,14 @@ end proc;
 
 ZeroDimBoundaries:=proc(Equations, FamPositive, FamNotNull,
                         Inequalities, Inequations, vars, opts:={})
-local eps, lsys, delta, J, i, sols, lsols;
+local verb, eps, lsys, emin, delta, J, i, sols, lsols;
+
+  if type(subs(opts, "verb"), integer) then 
+    verb:=subs(opts, "verb");
+  else 
+    verb:=0:
+  end if;
+  
   lsys:=GenerateDeformedFamilies_eps(Equations, FamPositive,
   FamNotNull, vars, eps, {op(Inequalities), op(Inequations)}):
   lprint(lsys);
@@ -1451,7 +1458,56 @@ local eps, lsys, delta, J, i, sols, lsols;
     lprint(evalf(sols));
     sols:=map(_p->map(_c->if member(lhs(_c), vars) then _c fi, _p), sols):
     lsols:=[op(lsols), op(sols)]:
+  
+    emin:=2:
+    for j from 1 to nops(Inequalities) do 
+      sols:=MSolveRealRoots([rag_sat_var*eps-1,op(lsys[i]),Inequalities[j]], 
+            [rag_sat_var, eps, op(vars)],
+            [], opts):
+      if sols[1]>0 then 
+        lprint(args);
+        error "Bug in ZeroDimBoundaries";
+      end if;
+      emin:=min(map(abs, map(op, map(_p->subs(_p, eps), sols[2]))));
+    end do;
+    for j from 1 to nops(Inequations) do 
+      sols:=MSolveRealRoots([rag_sat_var*eps-1,op(lsys[i]),Inequations[j]], 
+            [rag_sat_var, eps, op(vars)],
+            [], opts):
+      if sols[1]>0 then 
+        lprint(args);
+        error "Bug in ZeroDimBoundaries";
+      end if;
+      emin:=min(map(abs, map(op, map(_p->subs(_p, eps), sols[2]))));
+    end do;
+
+    if emin=2 then 
+      sols:=MSolveRealRoots(subs(eps=emin,lsys[i]), vars,
+                            [op(Inequalities), op(Inequations)], opts):
+      while sols[1]>0 do 
+        if verb >= 1 then printf("*"); end if;
+        emin:=emin/2:
+        sols:=MSolveRealRoots(subs(eps=emin,lsys[i]), vars,
+                            [op(Inequalities), op(Inequations)], opts):
+      end do:
+    else 
+      emin:=emin/2:
+      sols:=MSolveRealRoots(subs(eps=emin,lsys[i]), vars,
+                            [op(Inequalities), op(Inequations)], opts):
+      while sols[1]>0 do 
+        if verb >= 1 then printf("*"); end if;
+        emin:=emin/2:
+        sols:=MSolveRealRoots(subs(eps=emin,lsys[i]), vars,
+                            [op(Inequalities), op(Inequations)], opts):
+      end do:
+    end if;
+    lprint(evalf(sols));
+    sols:=AdmissibleSolutions(sols, nops(Inequalities));
+    lprint(evalf(sols));
+
+    lsols:=[op(lsols), op(sols)]:
   end do;
+
   return lsols;
 end proc;
 

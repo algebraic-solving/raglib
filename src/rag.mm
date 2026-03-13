@@ -68,6 +68,19 @@ local rr, hyp, _var, ld, gb, J;
   end if;
 end proc:
 
+HaveFiniteIntersections:=proc(eqs, cstr, vars, opts:={})
+local i, gb, rr, hyp, j;
+  rr:=rand(1..2^30):
+  for i from 1 to nops(cstr) do
+    hyp:=add(rr()*vars[j],j=1..nops(vars)) + rr():
+    gb:=MSolveGroebnerLM([op(eqs), cstr[i], hyp], 0, vars, opts):
+    if gb<>[1] then 
+      return false;
+    end if;
+  end do;
+  return true;
+end proc:
+
 #To be improved; one should also return values that make positive the
 #inequalities
 GoodFiberValue_svars:=proc(svars, Inequalities, Inequations)
@@ -386,7 +399,7 @@ local rr, hyp, J, B, n, _var, i, j, minors, deg, gendeg, ll, isbounded, newll:
 end proc:
 
 
-CoeffDeform_eps:=proc(eqs, F, vars, eps, opts:={})
+CoeffDeform_eps:=proc(eqs, F, vars, eps, cstr, opts:={})
 local rr, gb, hs, deg, rag_hilb_var, i, gb0, dim, newlc, lc, k, allvars:
   rr:=rand(1..2^30):
   allvars:=[op(vars), eps]:
@@ -403,7 +416,11 @@ local rr, gb, hs, deg, rag_hilb_var, i, gb0, dim, newlc, lc, k, allvars:
               opts union {"linalg"=42}):
       hs    := Groebner:-HilbertSeries(gb, allvars, rag_hilb_var);
       if gb=gb0 then 
-        return lc[k];
+        if HaveFiniteIntersections([op(eqs), 
+                                    seq(F[i]+lc[k][i]*eps, i=1..nops(F))], 
+                                    cstr, [op(vars), eps], opts) then 
+          return lc[k];
+        end if;
       end if;
     end do;
     newlc:=NextForms(lc):
@@ -1258,7 +1275,7 @@ end proc:
 
 #Generates families to solve
 GenerateDeformedFamilies_eps:=proc(eqs, FamPositive, FamNotNull, 
-                                   vars, eps, opts:={})
+                                   vars, eps, cstr:={})
 local i, lsys, deform, j, deform1, deform2, pol, lc, sys;
   deform:=[FamPositive]:
   for i from 1 to nops(FamNotNull) do 
@@ -1269,7 +1286,7 @@ local i, lsys, deform, j, deform1, deform2, pol, lc, sys;
   end do;
   lsys:=[]:
   for i from 1 to nops(deform) do 
-    lc:=CoeffDeform_eps(eqs, deform[i], vars, eps, opts);
+    lc:=CoeffDeform_eps(eqs, deform[i], vars, eps, cstr, opts);
     sys:=[op(eqs), seq(deform[i][j]-lc[j]*eps,j=1..nops(deform[i]))]:
     lsys:=[op(lsys), sys]:
   end do;
@@ -1405,6 +1422,37 @@ NewInequalities, newvars, tsols, Fam, sols, Positive, NotNull;
       end if;
   end do;
   return sols;
+end proc;
+
+ZeroDimBoundaries:=proc(Equations, FamPositive, FamNotNull,
+                        Inequalities, Inequations, vars, opts:={})
+local eps, lsys, delta, J, i, sols, lsols;
+  lsys:=GenerateDeformedFamilies_eps(Equations, FamPositive,
+  FamNotNull, vars, eps, {op(Inequalities), op(Inequations)}):
+  lprint(lsys);
+  J:=convert(linalg:-jacobian([op(Equations), op(FamPositive), op(FamNotNull)],
+              vars), Matrix);
+  delta:=ComputeMaximalMinors(J):
+  lsols:=[]:
+  for i from 1 to nops(lsys) do
+    sols:=MSolveRealRoots([rag_sat_var*eps-1,op(lsys[i]),op(delta)], 
+          [rag_sat_var, eps, op(vars)],
+          [op(Inequalities), eps, op(Inequations)], opts):
+    if sols[1]>0 then 
+      lprint(args);
+      error "Degenerate case";
+    end if;
+    lprint(evalf(sols));
+    if nops(FamPositive)>0 then 
+      sols:=AdmissibleSolutions(sols, nops(Inequalities)+1);
+    else 
+      sols:=AdmissibleSolutions(sols, nops(Inequalities));
+    end if;
+    lprint(evalf(sols));
+    sols:=map(_p->map(_c->if member(lhs(_c), vars) then _c fi, _p), sols):
+    lsols:=[op(lsols), op(sols)]:
+  end do;
+  return lsols;
 end proc;
 
 SolveFamily:=proc(Equations, FamPositive, FamNotNull, Inequalities, Inequations, vars, opts:={})

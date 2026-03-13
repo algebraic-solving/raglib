@@ -154,16 +154,17 @@ local newlctables, i, lc, pol, k;
 end proc:
 
 LiftPolynomials:=proc(lctables, support, primetable, modulus, islifted)
-local i, j, lifted, pol, cc;
+local i, j, length, lifted, pol, cc;
   lifted:=[];
   for i from 1 to nops(lctables) do 
     pol:=0:
     if i > islifted then 
+      length:=nops(lctables[i]);
       for j from 1 to nops(lctables[i]) do 
         cc:=chrem(lctables[i][j], primetable);
         cc:=iratrecon(cc, modulus);
         if evalb(cc=FAIL) then return lifted; end if;
-        pol:=pol+cc*support[i][j];
+        pol:=pol+cc*support[i][length-j+1];
       end do;
       lifted:=[op(lifted), pol];
     end if;
@@ -427,6 +428,7 @@ newlifted, prevlifted;
   printf("[ngens=%d,mdeg=%d]", N, max(map(degree, gb[1..N])));
   modulus:=fc:
   boo, support:=MonomialSupport(gb[1..N], [seq([],i=1..N)], vars):
+  lprint("support", support);
   boo:=true:
   primetable:=[fc]:
   systable:=[gb[1..N]]:

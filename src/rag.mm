@@ -1275,7 +1275,7 @@ end proc:
 
 #Generates families to solve
 GenerateDeformedFamilies_eps:=proc(eqs, FamPositive, FamNotNull, 
-                                   vars, eps, cstr:={})
+                                   vars, eps, cstr, opts:={})
 local i, lsys, deform, j, deform1, deform2, pol, lc, sys;
   deform:=[FamPositive]:
   for i from 1 to nops(FamNotNull) do 
@@ -1424,9 +1424,24 @@ NewInequalities, newvars, tsols, Fam, sols, Positive, NotNull;
   return sols;
 end proc;
 
+DegenerateDeformedSystem:=proc(sys, ld, Inequalities, Inequations, vars, eps, opts)
+local gb, sols;
+  lprint(args);
+  #debug(SaturateIntersect, ModSatIntersectLM,MinimalGeneratorsDichotomy);
+  gb:=SaturateIntersect(sys, ld[1], ld, [op(vars), eps], opts):
+  lprint(gb);
+  sols:=MSolveRealRoots([op(gb), op(sys), ld[1]], [op(vars), eps],
+        [op(Inequalities), eps, op(Inequations)], opts):
+  lprint(sols);
+  quit;
+  sols:=AdmissibleSolutions(sols, nops(Inequalities)):
+  sols:=map(_p->map(_c->if member(lhs(_c), vars) then _c fi, _p), sols):
+  return sols;
+end proc:
+
 ZeroDimBoundaries:=proc(Equations, FamPositive, FamNotNull,
                         Inequalities, Inequations, vars, opts:={})
-local verb, eps, lsys, emin, delta, J, i, sols, lsols;
+local verb, eps, lsys, emin, delta, J, i, j, sols, lsols;
 
   if type(subs(opts, "verb"), integer) then 
     verb:=subs(opts, "verb");
@@ -1446,8 +1461,9 @@ local verb, eps, lsys, emin, delta, J, i, sols, lsols;
           [rag_sat_var, eps, op(vars)],
           [op(Inequalities), eps, op(Inequations)], opts):
     if sols[1]>0 then 
-      lprint(args);
-      error "Degenerate case";
+      debug(DegenerateDeformedSystem);
+      sols:=DegenerateDeformedSystem(lsys[i], delta, Inequalities,
+            Inequations, vars, eps, opts):
     end if;
     lprint(evalf(sols));
     if nops(FamPositive)>0 then 
@@ -1468,7 +1484,9 @@ local verb, eps, lsys, emin, delta, J, i, sols, lsols;
         lprint(args);
         error "Bug in ZeroDimBoundaries";
       end if;
-      emin:=min(map(abs, map(op, map(_p->subs(_p, eps), sols[2]))));
+      if nops(sols[2])>0 then 
+        emin:=min(map(abs, map(op, map(_p->subs(_p, eps), sols[2]))));
+      end if;
     end do;
     for j from 1 to nops(Inequations) do 
       sols:=MSolveRealRoots([rag_sat_var*eps-1,op(lsys[i]),Inequations[j]], 
@@ -1478,7 +1496,10 @@ local verb, eps, lsys, emin, delta, J, i, sols, lsols;
         lprint(args);
         error "Bug in ZeroDimBoundaries";
       end if;
-      emin:=min(map(abs, map(op, map(_p->subs(_p, eps), sols[2]))));
+      lprint("sols", evalf(sols));
+      if nops(sols[2])>0 then 
+        emin:=min(map(abs, map(op, map(_p->subs(_p, eps), sols[2]))));
+      end if;
     end do;
 
     if emin=2 then 
@@ -1501,7 +1522,6 @@ local verb, eps, lsys, emin, delta, J, i, sols, lsols;
                             [op(Inequalities), op(Inequations)], opts):
       end do:
     end if;
-    lprint(evalf(sols));
     sols:=AdmissibleSolutions(sols, nops(Inequalities));
     lprint(evalf(sols));
 
@@ -1560,14 +1580,21 @@ NewFamNotNull, isempty, newsols, isbounded;
     return sols;
   end if;
 
-  if nops(Equations) + nops(Fam) <= nops(vars) then 
+  if nops(Equations) + nops(Fam) < nops(vars) then 
     sols := UnboundedComponents(Equations, FamPositive, FamNotNull, 
               Inequalities, Inequations, vars, opts):
     if nops(sols) > 0 and isempty >0 then 
       return sols;
     fi;
   end if;
-  if nops(Equations) + nops(Fam) > nops(vars) then 
+  if nops(Equations) + nops(Fam) = nops(vars) then 
+    sols:=ZeroDimBoundaries(Equations, FamPositive, FamNotNull,
+    Inequalities, Inequations, vars, opts):
+    if nops(sols) > 0 and isempty > 0 then 
+      return sols;
+    fi;
+  end if;
+  if 0=1 and nops(Equations) + nops(Fam) > nops(vars) then 
     if verb>=1 then printf("[cn"); end if;
     try
       sols := ConstrainedValues(Equations, FamPositive, FamNotNull, vars, remove(member,

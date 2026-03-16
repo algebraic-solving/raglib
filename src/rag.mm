@@ -1428,19 +1428,98 @@ local gb, sols;
   return sols;
 end proc:
 
-InfiniteBranches:=proc(sys, Inequalities, Inequations, vars, eps, opts:={})
-  error "Not implemented yet";
-end proc;
-
-ZeroDimBoundaries:=proc(Equations, FamPositive, FamNotNull,
-                        Inequalities, Inequations, vars, opts:={})
-local verb, eps, lsys, emin, delta, J, i, j, sols, lsols, maxdeg;
+InfiniteBranches:=proc(sys, ld, Inequalities, Inequations, vars, eps, opts:={})
+local hyp, sols1, sols2, j, smin, smax, i, newll, gb, sys0, gb0, boo, ll, sols, _T, rag_sat_var, rr, deg, hs, dim, spec, n, verb, isbounded, allvars;
 
   if type(subs(opts, "verb"), integer) then 
     verb:=subs(opts, "verb");
   else 
     verb:=0:
   end if;
+  if type(subs(opts, "isbounded"), integer) then 
+    isbounded:=subs(opts, "isbounded");
+  else 
+    isbounded:=0:
+  end if;
+
+  allvars:=[op(vars), eps]:
+  rr:=rand(2^16..2^30):
+  hyp:=add(rr()*allvars[i],i=1..nops(allvars))+rr():
+  gb:=MSolveGroebnerLM([rag_sat_var*eps-1,op(sys), hyp],0,[rag_sat_var,
+    op(allvars)], opts union {"elim"=1}):
+  hs:=Groebner:-HilbertSeries(gb, tdeg(op(allvars)), _T):
+  deg:=abs(subs(_T=1,numer(hs))):
+  dim:=degree(denom(hs)):
+  if dim > 0 then 
+    sys0:=SaturateIntersect(sys, ld[1], [], allvars, opts):
+    gb0:=MSolveGroebnerLM([hyp, rag_sat_var*eps-1,op(sys0)],0,[rag_sat_var,
+        op(allvars)], opts union {"elim"=1}):
+  else 
+    sys0:=sys: 
+    gb0:=gb:
+  end if;
+
+  n:=nops(allvars):
+  ll:=[[seq(1, i=1..n)]]:
+  boo:=true:
+  while boo do 
+    for i from 1 to nops(ll) do 
+      if verb>= 1 then 
+        printf("[+]");
+      end if;
+      hyp         := add(ll[i][j]*allvars[j], j=1..n):
+      gb:=MSolveGroebnerLM([rag_sat_var*eps-1,
+          hyp+rr(),op(sys0)],0,[rag_sat_var, op(allvars)], opts union
+          {"elim"=1}):
+      if gb = gb0 then boo:=false: end if:
+    end do;
+    newll := NextForms(ll);
+    ll:=remove(member, newll, ll):
+  end do;
+
+  sols:=MSolveRealRoots([rag_sep-hyp, op(sys), eps], [op(allvars), rag_sep],
+      [], opts):
+  if sols[1] > 0 then 
+    gb:=SaturateIntersect(sys, ld[1], [eps], allvars, opts):
+    sols:=MSolveRealRoots([op(gb), eps, op(sys), rag_sep-hyp],[op(allvars),rag_sep],
+      []):
+  end if;
+  spec:=map(abs, map(op, map(_p->subs(_p, rag_sep), sols[2]))):
+  if nops(spec)>0 then 
+    smin:=floor(min(spec))-1:
+    smax:=ceil(max(spec))+1:
+
+    sols1:=MSolveRealRoots([hyp-smin,
+         op(sys0),rag_sat_var*eps-1],[rag_sat_var, op(allvars)],
+         [op(Inequalities), eps, op(Inequations)], opts):
+    sols2:=MSolveRealRoots([hyp-smax,
+         op(sys0),rag_sat_var*eps-1],[rag_sat_var, op(allvars)],
+         [op(Inequalities), eps, op(Inequations)], opts):
+  else 
+    sols1:=[-1, []]:
+
+    sols2:=MSolveRealRoots([hyp-1,
+         op(sys0),rag_sat_var*eps-1],[rag_sat_var, op(allvars)],
+         [op(Inequalities), eps, op(Inequations)], opts):
+  end if;
+  return sols1, sols2;
+end proc;
+
+ZeroDimBoundaries:=proc(Equations, FamPositive, FamNotNull,
+                        Inequalities, Inequations, vars, opts:={})
+local verb, isbounded, eps, lsys, emin, delta, J, i, j, sols, lsols, maxdeg, sols1, sols2;
+
+  if type(subs(opts, "verb"), integer) then 
+    verb:=subs(opts, "verb");
+  else 
+    verb:=0:
+  end if;
+  if type(subs(opts, "isbounded"), integer) then 
+    isbounded:=subs(opts, "isbounded");
+  else 
+    isbounded:=0:
+  end if;
+
   maxdeg:=max(map(degree, [op(Equations), op(FamPositive),
   op(FamNotNull)]));
   lsys:=GenerateDeformedFamilies_eps(Equations, FamPositive,
@@ -1514,36 +1593,52 @@ local verb, eps, lsys, emin, delta, J, i, j, sols, lsols, maxdeg;
       end do:
     end if;
     sols:=AdmissibleSolutions(sols, nops(Inequalities));
+    sols:=map(_p->map(_c->if member(lhs(_c), vars) then _c fi, _p), sols):
     lsols:=[op(lsols), op(sols)]:
 
 #Additional specialistions of eps when all constraints are inequations
-    if emin=2 and nops(FamPositive) = 0 then 
-      sols:=MSolveRealRoots(subs(eps=-emin,lsys[i]), vars,
-                            [op(Inequalities), op(Inequations)], opts):
-      while sols[1]>0 do 
-        if verb >= 1 then printf("*"); end if;
+    if nops(FamPositive) = 0 then 
+      if emin=2  then 
+        sols:=MSolveRealRoots(subs(eps=-emin,lsys[i]), vars,
+                              [op(Inequalities), op(Inequations)], opts):
+        while sols[1]>0 do 
+          if verb >= 1 then printf("*"); end if;
+          emin:=emin/2:
+          sols:=MSolveRealRoots(subs(eps=-emin,lsys[i]), vars,
+                              [op(Inequalities), op(Inequations)], opts):
+        end do:
+      else 
         emin:=emin/2:
         sols:=MSolveRealRoots(subs(eps=-emin,lsys[i]), vars,
-                            [op(Inequalities), op(Inequations)], opts):
-      end do:
-    else 
-      emin:=emin/2:
-      sols:=MSolveRealRoots(subs(eps=-emin,lsys[i]), vars,
-                            [op(Inequalities), op(Inequations)], opts):
-      while sols[1]>0 do 
-        if verb >= 1 then printf("*"); end if;
-        emin:=emin/2:
-        sols:=MSolveRealRoots(subs(eps=-emin,lsys[i]), vars,
-                            [op(Inequalities), op(Inequations)], opts):
-      end do:
+                              [op(Inequalities), op(Inequations)], opts):
+        while sols[1]>0 do 
+          if verb >= 1 then printf("*"); end if;
+          emin:=emin/2:
+          sols:=MSolveRealRoots(subs(eps=-emin,lsys[i]), vars,
+                              [op(Inequalities), op(Inequations)], opts):
+        end do:
+      end if;
+      sols:=AdmissibleSolutions(sols, nops(Inequalities));
+      sols:=map(_p->map(_c->if member(lhs(_c), vars) then _c fi, _p), sols):
+      lsols:=[op(lsols), op(sols)]:
     end if;
-    sols:=AdmissibleSolutions(sols, nops(Inequalities));
-    lsols:=[op(lsols), op(sols)]:
 
-    if maxdeg > 1 then 
-      sols:=InfiniteBranches(lsys[i], Inequalities,
-              Inequations, vars, eps, opts)
+    if maxdeg > 1 and isbounded = 0 then 
+      sols1, sols2:=InfiniteBranches(lsys[i], delta, Inequalities,
+                    Inequations, vars, eps, opts)
     end if;
+    if nops(FamPositive)>0 then 
+      sols:=AdmissibleSolutions(sols1, nops(Inequalities)+1):
+    else 
+      sols:=AdmissibleSolutions(sols1, nops(Inequalities)):
+    end if;
+    lsols:=[op(lsols), op(sols)]:
+    if nops(FamPositive)>0 then 
+      sols:=AdmissibleSolutions(sols2, nops(Inequalities)+1):
+    else 
+      sols:=AdmissibleSolutions(sols2, nops(Inequalities)):
+    end if;
+    sols:=map(_p->map(_c->if member(lhs(_c), vars) then _c fi, _p), sols):
     lsols:=[op(lsols), op(sols)]:
   end do;
 

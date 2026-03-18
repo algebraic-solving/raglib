@@ -1635,6 +1635,7 @@ local verb, isbounded, eps, lsys, emin, delta, J, i, j, sols, lsols, maxdeg, sol
     else 
       sols:=AdmissibleSolutions(sols1, nops(Inequalities)):
     end if;
+    sols:=map(_p->map(_c->if member(lhs(_c), vars) then _c fi, _p), sols):
     lsols:=[op(lsols), op(sols)]:
     if nops(FamPositive)>0 then 
       sols:=AdmissibleSolutions(sols2, nops(Inequalities)+1):

@@ -1129,6 +1129,36 @@ local i, Families, Fam, sols, a, b;
   return sols;
 end proc:
 
+ConstantSolveFamily:=proc(Equations, FamPositive, FamNotNull, Inequalities, Inequations)
+local i;
+  for i from 1 to nops(Equations) do
+    if Equations[i] <> 0 then
+      return [];
+    end if;
+  end do;
+  for i from 1 to nops(FamPositive) do
+    if FamPositive[i] <= 0 then
+      return [];
+    end if;
+  end do;
+  for i from 1 to nops(Inequalities) do
+    if Inequalities[i] <= 0 then
+      return [];
+    end if;
+  end do;
+  for i from 1 to nops(FamNotNull) do
+    if FamNotNull[i] = 0 then
+      return [];
+    end if;
+  end do;
+  for i from 1 to nops(Inequations) do
+    if Inequations[i] = 0 then
+      return [];
+    end if;
+  end do;
+  return [[]];
+end proc:
+
 UnivariateSolveFamily:=proc(Equations, Fam, Inequalities, Inequations, vars)
 local g, upol, f, uroots, i, sq, sols, q, newpol, p, mid;
   g:=0:
@@ -1674,6 +1704,9 @@ NewFamNotNull, isempty, newsols, isbounded;
   Fam:=[op(FamPositive), op(FamNotNull)]:
   Fam:=sort(Fam, (a, b)->degree(a)<=degree(b)):
   sols:=[];
+  if nops(vars) = 0 then
+    return ConstantSolveFamily(Equations, FamPositive, FamNotNull, Inequalities, Inequations);
+  end if;
   if nops(vars) = 1 then 
     return UnivariateSolveFamily(Equations, FamPositive, Inequalities, Inequations, vars); 
   end if;
@@ -1858,7 +1891,7 @@ end proc:
 SemiAlgebraicSolve:=proc(Equations, Inequalities, Inequations, opts:={})
 local newsols, _toStudy, l, i, pol, boo, vars, _Studied, singminors, pt, _c,
 midsols, verb, sols, lsigns, _l, nc, isempty, oldvars, newvars,
-newopts, oldnewvars, npos;
+newopts, oldnewvars, npos, NewEquations;
 
   if type(subs(opts, "verb"), integer) then 
     verb:=subs(opts, "verb");
@@ -1872,11 +1905,27 @@ newopts, oldnewvars, npos;
     isempty:=0:
   end if;
 
+  if member(0, Inequations) or member(0, Inequalities) or 
+      member(-1, map(sign, map(_pol->if degree(_pol)=0 then _pol fi, Inequalities))) then 
+    return [];
+  end if;
+
+  if nops(select(_pol -> type(_pol, constant) and _pol <> 0, Equations)) > 0 then 
+    return [];
+  end if;
+
+  NewEquations := select(_pol -> not type(_pol, constant), Equations);
+
   vars:=[op(indets([op(Equations), op(Inequalities), op(Inequations)]))];
+  if nops(vars) = 0 then 
+    return ConstantSolveFamily(Equations, Inequalities, Inequations,
+    [], []);
+  end if;
+
   sols := [];
   lsigns:={}:
-  if nops(Equations) > 0 then
-    sols := PointsPerComponentsAlgebraic(Equations, Inequalities, Inequations, opts);
+  if nops(NewEquations) > 0 then
+    sols := PointsPerComponentsAlgebraic(NewEquations, Inequalities, Inequations, opts);
     if isempty>=1 and nops(sols) > 0 then
       return sols;
     end if;
@@ -1920,7 +1969,7 @@ newopts, oldnewvars, npos;
       end if;
     end if;
 
-    newsols:=SemiAlgebraicSolveIterateOnFamilies(Equations, _toStudy, Inequalities,
+    newsols:=SemiAlgebraicSolveIterateOnFamilies(NewEquations, _toStudy, Inequalities,
           Inequations, vars, newopts);
 
     midsols:=map(pt->map(_c->lhs(_c)=(rhs(_c)[1]+rhs(_c)[2])/2, pt), newsols):
@@ -1966,7 +2015,7 @@ newopts, oldnewvars, npos;
       end if;
     end if;
 
-    newsols:=SemiAlgebraicSolveIterateOnFamilies(Equations, _toStudy, Inequalities,
+    newsols:=SemiAlgebraicSolveIterateOnFamilies(NewEquations, _toStudy, Inequalities,
           Inequations, vars, newopts);
     midsols:=map(pt->map(_c->lhs(_c)=(rhs(_c)[1]+rhs(_c)[2])/2, pt), newsols):
     lsigns:=lsigns union convert(map(l->map(sign, l), map(pt->subs(pt,Inequations), midsols)), set):

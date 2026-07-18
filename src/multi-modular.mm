@@ -107,6 +107,8 @@ local monomials, lc, m, i, boo, newlsupport:
       boo:=false;
     end if;
   end do;
+  newlsupport:=map(m->sort(m, (a, b)->Groebner:-TestOrder(a, b, tdeg(op(vars)))), 
+        newlsupport);
   if boo = false then
     return false, newlsupport;
   end if;
@@ -119,13 +121,15 @@ end proc:
 #support is assumed to be ordered increasingly by grevlex(vars)
 #returns the list of corresponding coefficients
 TableCoeffsSinglePoly:=proc(pol, vars, support)
-local i, k, lc, lm, lctable;
+local i, k, lc, lm, lctable, perm;
   lc:=[coeffs(pol, vars, 'lm')]:
-  lm:=sort([lm], (a, b)->Groebner:-TestOrder(a, b, tdeg(op(vars)))):
+  lm, perm:=sort([lm], (a, b)->Groebner:-TestOrder(a, b, tdeg(op(vars))), 'output = [sorted, permutation]'):
+  lc:=lc[perm];
   lctable:=Array([seq(0, i=1..nops(support))]):
   for i from 1 to nops(lm) do
-    member(lm[i], support, 'k');
+    if member(lm[i], support, 'k') then
     lctable[k]:=lc[i];
+    end if;
   end do;
   return convert(lctable, list);
 end proc:
@@ -164,7 +168,8 @@ local i, j, length, lifted, pol, cc;
         cc:=chrem(lctables[i][j], primetable);
         cc:=iratrecon(cc, modulus);
         if evalb(cc=FAIL) then return lifted; end if;
-        pol:=pol+cc*support[i][length-j+1];
+        #pol:=pol+cc*support[i][length-j+1];
+        pol:=pol+cc*support[i][j];
       end do;
       lifted:=[op(lifted), pol];
     end if;

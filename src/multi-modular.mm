@@ -437,6 +437,7 @@ newlifted, prevlifted;
   oldwitness:=[]:
   islifted:=0:#largest index of polys which are lifted
   lifted:=[]:
+  prevlifted:=[]:
   while boo do 
     fc:=nextprime(fc);
     while fc = fcinit do 
@@ -471,6 +472,9 @@ newlifted, prevlifted;
         printf("*");
         newlifted:=LiftPolynomials(lctables, support, primetable, modulus, islifted):
         islifted:=0:
+        if prevlifted=[] then
+          prevlifted:=newlifted:
+        else 
         for i from 1 to min(nops(newlifted), nops(prevlifted)) do
           if newlifted[i]=prevlifted[i] and not(member(newlifted[i],
             lifted)) then 
@@ -481,6 +485,7 @@ newlifted, prevlifted;
             prevlifted:=newlifted;
           end if;
         end do;
+        end if;
         if nops(lifted) = N then 
           return map(numer, lifted);
         end if;

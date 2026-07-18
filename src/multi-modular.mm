@@ -134,17 +134,6 @@ local i, k, lc, lm, lctable, perm;
   return convert(lctable, list);
 end proc:
 
-OldTableCoeffs:=proc(sys, vars, lsupport, lctables)
-local newlctables, i, lc, pol, k;
-  newlctables:=Array([seq([], i=1..nops(sys))]);
-  #newlctables:=[seq([], i=1..nops(sys))];
-  for i from 1 to nops(sys) do 
-    pol:=sys[i];
-    lc:=TableCoeffsSinglePoly(pol, vars, lsupport[i]);
-    newlctables[i]:=[seq([op(lctables[i][k]), lc[k]],k=1..nops(lc))]:
-  end do;
-  return convert(newlctables, list);
-end proc:
 
 TableCoeffs:=proc(sys, vars, lsupport, lctables)
 local newlctables, i, lc, pol, k;

@@ -1857,12 +1857,13 @@ newsols, ls, var, hypsol, isempty, hyp, minors, gendeg, _pol;
 # Compute the associated critical points and selects those satisfying
 # the constraints
   if gendeg = 0 then 
-    return [0, []];
+    sols:= []:
+  else 
+    sols := MSolveRealRoots([op(Equations), op(minors)], vars,
+            [op(spos), op(sineq)], opts);
+    sols:=AdmissibleSolutions(sols, nops(spos));
+    sols:=map(_sol->[op(_sol), op(spt)], sols):
   end if;
-  sols := MSolveRealRoots([op(Equations), op(minors)], vars,
-          [op(spos), op(sineq)], opts);
-  sols:=AdmissibleSolutions(sols, nops(spos));
-  sols:=map(_sol->[op(_sol), op(spt)], sols):
 
   if nops(sols) > 0 and isempty > 0 then 
      return sols;

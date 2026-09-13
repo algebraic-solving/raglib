@@ -2036,9 +2036,7 @@ newopts, oldnewvars, npos, NewEquations;
     newsols:=SemiAlgebraicSolveIterateOnFamilies(NewEquations, _toStudy, Inequalities,
           Inequations, vars, newopts);
     midsols:=map(pt->map(_c->lhs(_c)=(rhs(_c)[1]+rhs(_c)[2])/2, pt), newsols):
-    lprint(midsols);
     lsigns:=lsigns union convert(map(l->map(sign, l), map(pt->subs(pt,Inequations), midsols)), set):
-    lprint("lsigns", lsigns);
 
     if verb >= 1 and nops(Inequations)>0 then 
      printf("Signs of inequations at computed points: %a\n", lsigns);

@@ -263,7 +263,7 @@ end proc:
 
 FindGenericLineRegular:=proc(eqs, F, lc, singminors, vars,opts:={})
 local rr, hyp, J, B, n, v, i, j, minors, deg, gendeg, ll, isbounded,
-newll, dF, verb:
+newll, dF, verb, uvars:
 
   if type(subs(opts, "isbounded"), integer) then 
     isbounded:=subs(opts, "isbounded");
@@ -275,27 +275,28 @@ newll, dF, verb:
   else 
     verb:=0:
   end if;
+  uvars:=[op(indets(eqs) union indets(F))]:
   dF:=[seq(F[i]+lc[i],i=1..nops(F))]:
 ################################
 #Generic degree
   rr:=rand(1..nextprime(2^30)):
-  hyp:=add(rr()*v, v in vars):
-  gendeg, minors := TestGenericLineDegreeRegular([op(eqs),op(dF)], vars, hyp, opts); 
+  hyp:=add(rr()*v, v in uvars):
+  gendeg, minors := TestGenericLineDegreeRegular([op(eqs),op(dF)], uvars, hyp, opts); 
   if gendeg = -2 then 
     lprint(eqs, F, lc, singminors, vars);
     error "Generic line should provide finitely many critical points" ; 
   end if;
 ################################
 
-  for i from 1 to nops(vars) do 
+  for i from 1 to nops(uvars) do 
     if verb >= 1 then 
       printf("+");
     end if;
-    if not(member(vars[i], F)) then 
-      hyp        := vars[i]:
-      deg, minors := TestGenericLineDegreeRegular([op(eqs),op(dF)], vars, hyp, opts):
+    if not(member(uvars[i], F)) then 
+      hyp        := uvars[i]:
+      deg, minors := TestGenericLineDegreeRegular([op(eqs),op(dF)], uvars, hyp, opts):
       if deg=gendeg or (deg >= 0 and isbounded > 0) then
-        if HasFiniteCriticalLocus(eqs, F, minors, singminors, vars,
+        if HasFiniteCriticalLocus(eqs, F, minors, singminors, uvars,
           opts) then 
           return hyp, minors, gendeg;
         end if;
@@ -304,17 +305,17 @@ newll, dF, verb:
   od;
 
   B:=1:
-  n:=nops(vars):
+  n:=nops(uvars):
   ll:=[[seq(1, i=1..n)]]:
   while true do 
     for i from 1 to nops(ll) do 
       if verb>= 1 then 
         printf("+");
       end if;
-      hyp         := add(ll[i][j]*vars[j], j=1..n):
-      deg, minors := TestGenericLineDegreeRegular([op(eqs),op(dF)], vars, hyp, opts):
+      hyp         := add(ll[i][j]*uvars[j], j=1..n):
+      deg, minors := TestGenericLineDegreeRegular([op(eqs),op(dF)], uvars, hyp, opts):
       if deg=gendeg or (deg >= 0 and isbounded > 0)  then
-        if HasFiniteCriticalLocus(eqs, F, minors, singminors, vars,
+        if HasFiniteCriticalLocus(eqs, F, minors, singminors, uvars,
           opts) then 
           return hyp, minors, gendeg;
         end if;
@@ -328,19 +329,21 @@ newll, dF, verb:
 end proc:
 
 FindGenericLineSingular:=proc(F, vars, singminors, opts:={})
-local rr, hyp, J, B, n, _var, i, j, minors, deg, gendeg, ll, isbounded, newll:
+local rr, hyp, J, B, n, _var, i, j, minors, deg, gendeg, ll, isbounded, 
+newll, uvars:
 
   if type(subs(opts, "isbounded"), integer) then 
     isbounded:=subs(opts, "isbounded");
   else 
     isbounded:=0:
   end if;
+  uvars:=[op(indets(F))]:
 ################################
 #Generic degree
   rr:=rand(1..65520):
-  hyp:=add(rr()*_var, _var in vars):
+  hyp:=add(rr()*_var, _var in uvars):
   if isbounded = 0 then 
-  gendeg, minors := TestGenericLineDegreeSingular(F, vars, hyp, singminors, [], opts); 
+  gendeg, minors := TestGenericLineDegreeSingular(F, uvars, hyp, singminors, [], opts); 
   if member(-2, gendeg) then
     error"Generic line should give finitely many critical points";
   end if;
@@ -352,11 +355,11 @@ local rr, hyp, J, B, n, _var, i, j, minors, deg, gendeg, ll, isbounded, newll:
 #the next loop will return the first variable (see example 
 #  F = [x1,x2,x1-x2],vars=[x1,x2,x3])
 
-  for i from 1 to nops(vars) do 
+  for i from 1 to nops(uvars) do 
     printf("+");
-    if not(member(vars[i], F)) then 
-      hyp         := vars[i]:
-      deg, minors := TestGenericLineDegreeSingular(F, vars, hyp, singminors,
+    if not(member(uvars[i], F)) then 
+      hyp         := uvars[i]:
+      deg, minors := TestGenericLineDegreeSingular(F, uvars, hyp, singminors,
                      gendeg, opts):
       if deg=gendeg or (nops(convert(map(sign, deg),set))=1 and isbounded > 0) then
         return hyp, minors, gendeg;
@@ -364,13 +367,13 @@ local rr, hyp, J, B, n, _var, i, j, minors, deg, gendeg, ll, isbounded, newll:
     end if;
   od;
   B:=1:
-  n:=nops(vars):
+  n:=nops(uvars):
   ll:=[[seq(1, i=1..n)]]:
   while true do 
     for i from 1 to nops(ll) do 
       printf("+");
-      hyp         := add(ll[i][j]*vars[j], j=1..n):
-      deg, minors := TestGenericLineDegreeSingular(F, vars, hyp, singminors,
+      hyp         := add(ll[i][j]*uvars[j], j=1..n):
+      deg, minors := TestGenericLineDegreeSingular(F, uvars, hyp, singminors,
       gendeg, opts):
       if deg=gendeg or (nops(convert(map(sign, deg),set))=1 and isbounded > 0) then
         return hyp, minors, gendeg;
@@ -415,7 +418,7 @@ local rr, gb, hs, deg, rag_hilb_var, i, lhyp, hyp, gbsing, newlc, lc, k:
   rr:=rand(1..2^30):
   lhyp:=[seq(add(rr()*vars[i],i=1..nops(vars)),
         nops(vars)-nops(F)-nops(eqs))]:
-  gb:=MSolveGroebnerLM([op(eqs), seq(F[i]+rr(), i=1..nops(F)), op(lhyp)], 0, vars, 
+  gb:=MSolve:-MSolveGroebnerLM([op(eqs), seq(F[i]+rr(), i=1..nops(F)), op(lhyp)], 0, vars, 
             opts union {"linalg"=42}):
   hs    := Groebner:-HilbertSeries(gb, vars, rag_hilb_var);
   if degree(denom(hs)) = 0 then 
@@ -567,7 +570,9 @@ local vvar, ls, rd, sols, rr, lF, lhyp, gb, i, j, verb;
         lprint(args);
         error "Degenerate case in ComputeBounds: to be implemented (bounds)";
       fi;
-      sols := [0, AdmissibleSolutions(sols, nops(Positive))];
+      #One should not take here admissible solutions only because then we 
+      #may remove some contraint later if at the admissible points they always 
+      #have the same sign
     end if;
     if nops(sols[2]) > 0 then 
       rr := convert(map(s->subs(s, rag_sep_elem), sols[2]), set);
@@ -792,7 +797,9 @@ lF, nsols2, rr, j, lhyp, k, vvar, ls, verb;
           lprint(args);
           error "nsols should have cardinality 2 (1)";
         end if;
-        nsols := [0, AdmissibleSolutions(nsols, nops(Positive))];
+        #One should not take here admissible solutions only because then we 
+        #may remove some contraint later if at the admissible points they always 
+        #have the same sign
         if nops(Equations) + nops(Fam) < nops(vars) then 
           nsols2:=MSolveRealRoots([rag_sat_var*pol-1, op(Equations), op(minors),
                                 op(Fam), op(toadd), hyp-rag_sep_elem], 
@@ -808,7 +815,6 @@ lF, nsols2, rr, j, lhyp, k, vvar, ls, verb;
           lprint(args);
           error "nsols2 should have cardinality 2 (2)";
         else 
-          nsols2 := [0, AdmissibleSolutions(nsols2, nops(Positive))];
           nsols2:=[0, map(s->map(c->if indets(c) subset indets([op(vars),
                         rag_sep_elem]) then c
                         fi,s), nsols2[2])]:
@@ -864,15 +870,17 @@ end proc:
 
 ComputeBounds:=proc(Equations, Fam, Positive, NotNull, vars, opts:={})
 local boo, i, pol, nsols, gb, hyp, rr, s, sols,j, k, gendeg, singminors, 
-sysminors, nsols2, toadd, minors, OldDigits, lF, lhyp, lc;
+sysminors, nsols2, toadd, minors, OldDigits, lF, lhyp, lc, newEquations;
 
   hyp, minors, gendeg, boo, lc := FindGenericLine(Equations, Fam, vars, opts):
+  newEquations:=[op(Equations), 
+                 op(indets(vars) minus indets([op(Equations), op(Fam)]))]:
 #Regular case 
   if boo then 
-    return ComputeBoundsRegular(Equations, Fam, Positive, NotNull, vars, 
+    return ComputeBoundsRegular(newEquations, Fam, Positive, NotNull, vars, 
                     hyp, minors, gendeg, opts);
   else
-    return ComputeBoundsSingular(Equations, Fam, Positive, NotNull, vars, 
+    return ComputeBoundsSingular(newEquations, Fam, Positive, NotNull, vars, 
                     hyp, minors, gendeg, lc, opts);
     end if;
 end proc:
@@ -1672,7 +1680,7 @@ end proc:
 
 SolveFamily:=proc(Equations, FamPositive, FamNotNull, Inequalities, Inequations, vars, opts:={})
 local i, ls, cp, hyp, bounds, sols, tsols, a, b, verb, Fam, cstr, NewFamPositive,
-NewFamNotNull, isempty, newsols, isbounded;
+NewFamNotNull, isempty, newsols, isbounded, uvars, _v;
 
   if type(subs(opts, "verb"), integer) then 
     verb:=subs(opts, "verb");
@@ -1690,6 +1698,14 @@ NewFamNotNull, isempty, newsols, isbounded;
     isbounded:=0:
   end if;
 
+  uvars:=[op(indets([op(Equations),op(FamPositive),op(FamNotNull)]))]:
+  if nops(uvars)<>nops(vars) then 
+    ls:=map(_v->_v=0, indets(vars) minus indets(uvars));
+    newsols:=SolveFamily(Equations, FamPositive, FamNotNull, 
+        subs(ls,Inequalities), subs(ls, Inequations), uvars, opts);
+    ls:=map(_v->_v=[0,0], indets(vars) minus indets(uvars));
+    return map(_v->[op(_v),op(ls)], newsols);
+  end if;
 
   if member(0, [op(FamPositive), op(Inequalities)]) or 
      member(0, [op(FamNotNull), op(Inequations)]) then 
@@ -1708,7 +1724,8 @@ NewFamNotNull, isempty, newsols, isbounded;
     return ConstantSolveFamily(Equations, FamPositive, FamNotNull, Inequalities, Inequations);
   end if;
   if nops(vars) = 1 then 
-    return UnivariateSolveFamily(Equations, FamPositive, Inequalities, Inequations, vars); 
+    return UnivariateSolveFamily(Equations, FamPositive, 
+            Inequalities, Inequations, vars); 
   end if;
   if nops(Equations) = nops(vars) then 
     sols:=MSolveRealRoots(Equations, vars, [op(FamPositive),

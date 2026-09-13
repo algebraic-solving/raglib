@@ -380,7 +380,7 @@ newlifted, prevlifted;
         end if;
       end if;
     else
-      lprint("Bad prime");
+      lprint("Bad prime: ", fc);
     end if;
   end do;
   return lifted;
@@ -456,8 +456,8 @@ newlifted, prevlifted;
     end do:
     gb:=ModSatIntersect(eqs1, pol, eqs2, fc, vars, newopts):
     lmgb:=map(pol->Groebner:-LeadingMonomial(pol, tdeg(op(vars))), gb):
-    sys:=gb[1..N]:
     if lm=lmgb then 
+      sys:=gb[1..N]:
       boo1, boo2, newsupport, systable, primetable, witnessmod, modulus, witness := 
         GeneratorsLift(sys, fc, vars, modulus, witnessmod, support, systable,
                       primetable):

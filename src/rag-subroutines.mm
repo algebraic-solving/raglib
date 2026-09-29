@@ -204,7 +204,7 @@ local tord, rr, gb2, fc, pol, J, minors, gb, hs, rag_hilb_var, deg, lF, ldeg, i,
         gb2   := MSolveGroebner([op(gb), F[1]], 
                  fc, vars, opts):
         gb2   := map(p->Groebner:-LeadingMonomial(p,tord), gb2);
-        hs    := Groebner:-HilbertSeries(gb2, vars, rag_hilb_var);
+        hs    := Groebner:-HilbertSeries(gb2, tord, rag_hilb_var);
         if degree(denom(hs)) = 0 then 
           deg   := subs(rag_hilb_var=1, hs):
         else 
@@ -235,7 +235,7 @@ local J, minors, gb, hs, rag_hilb_var, deg;
     minors := []:
   end if;
   gb    := MSolveGroebnerLM([op(F),op(minors)], 0, vars,opts):
-  hs    := Groebner:-HilbertSeries(gb, vars, rag_hilb_var);
+  hs    := Groebner:-HilbertSeries(gb, tdeg(op(vars)), rag_hilb_var);
   if degree(denom(hs)) = 0 then 
     deg   := subs(rag_hilb_var=1, hs):
   else 
@@ -971,7 +971,7 @@ local i, toremove, sols, positive, nnull, cstr, j, gb, hs, np, rag_sat_var1, rag
                   seq(Fam[j]-Fam[1],j=1..nops(Fam)), op(minors),
                   rag_sat_var1*Fam[1]-1, rag_sat_var2*cstr[1]-1], 0, 
                   [rag_sat_var2, rag_sat_var1, op(vars)], {"elim"=2} union opts):
-    hs:=Groebner:-HilbertSeries(gb, vars, rag_hilb_var):
+    hs:=Groebner:-HilbertSeries(gb, tdeg(op(vars)), rag_hilb_var):
     if degree(denom(hs))=0 then 
       toremove:=[cstr[i]]:
       break;

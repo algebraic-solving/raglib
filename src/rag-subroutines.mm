@@ -420,7 +420,7 @@ local rr, gb, hs, deg, rag_hilb_var, i, lhyp, hyp, gbsing, newlc, lc, k:
         nops(vars)-nops(F)-nops(eqs))]:
   gb:=MSolve:-MSolveGroebnerLM([op(eqs), seq(F[i]+rr(), i=1..nops(F)), op(lhyp)], 0, vars, 
             opts union {"linalg"=42}):
-  hs    := Groebner:-HilbertSeries(gb, vars, rag_hilb_var);
+  hs    := Groebner:-HilbertSeries(gb, tdeg(op(vars)), rag_hilb_var);
   if degree(denom(hs)) = 0 then 
     deg   := subs(rag_hilb_var=1, hs):
   else 
@@ -437,7 +437,7 @@ local rr, gb, hs, deg, rag_hilb_var, i, lhyp, hyp, gbsing, newlc, lc, k:
       gbsing:=MSolveGroebnerLM([op(eqs), op(singminors), 
               seq(F[i]+lc[k][i], i=1..nops(F)), hyp], 0, vars, 
               opts union {"linalg"=42}):
-      hs    := Groebner:-HilbertSeries(gb, vars, rag_hilb_var);
+      hs    := Groebner:-HilbertSeries(gb, tdeg(op(vars)), rag_hilb_var);
       if degree(denom(hs))=0 and subs(rag_hilb_var=1, hs) = deg and
         gbsing = [1] then 
         return lc[k];

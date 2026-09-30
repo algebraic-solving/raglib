@@ -1456,7 +1456,7 @@ local gb, sols;
 end proc:
 
 InfiniteBranches:=proc(sys, ld, Inequalities, Inequations, vars, eps, opts:={})
-local hyp, sols1, sols2, j, smin, smax, i, newll, gb, sys0, gb0, boo, ll, sols, _T, rag_sat_var, rr, deg, hs, dim, spec, n, verb, isbounded, allvars;
+local hyp, sols1, sols2, j, smin, smax, i, newll, gb, sys0, gb0, boo, ll, sols, _T, rag_sat_var, rr, deg, hs, dim, spec, n, verb, isbounded, allvars, k;
 
   if type(subs(opts, "verb"), integer) then 
     verb:=subs(opts, "verb");
@@ -1522,12 +1522,25 @@ local hyp, sols1, sols2, j, smin, smax, i, newll, gb, sys0, gb0, boo, ll, sols, 
     sols2:=MSolveRealRoots([hyp-smax,
          op(sys0),rag_sat_var*eps-1],[rag_sat_var, op(allvars)],
          [op(Inequalities), eps, op(Inequations)], opts):
+    if sols2=[1] then
+      lprint("BUG in InfiniteBranches");
+    quit;
+    end if;
   else 
     sols1:=[-1, []]:
 
-    sols2:=MSolveRealRoots([hyp-1,
+    k:=1:
+    sols2:=MSolveRealRoots([hyp-k,
          op(sys0),rag_sat_var*eps-1],[rag_sat_var, op(allvars)],
          [op(Inequalities), eps, op(Inequations)], opts):
+    k:=k+1:
+    while sols2=[1] do
+      sols2:=MSolveRealRoots([hyp-k,
+         op(sys0),rag_sat_var*eps-1],[rag_sat_var, op(allvars)],
+         [op(Inequalities), eps, op(Inequations)], opts):
+      lprint("new sols2", sols2);
+      k:=k+1;
+    end do;
   end if;
   return sols1, sols2;
 end proc:

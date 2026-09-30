@@ -204,7 +204,7 @@ local tord, rr, gb2, fc, pol, J, minors, gb, hs, rag_hilb_var, deg, lF, ldeg, i,
         gb2   := MSolveGroebner([op(gb), F[1]], 
                  fc, vars, opts):
         gb2   := map(p->Groebner:-LeadingMonomial(p,tord), gb2);
-        hs    := Groebner:-HilbertSeries(gb2, vars, rag_hilb_var);
+        hs    := Groebner:-HilbertSeries(gb2, tord, rag_hilb_var);
         if degree(denom(hs)) = 0 then 
           deg   := subs(rag_hilb_var=1, hs):
         else 
@@ -235,7 +235,7 @@ local J, minors, gb, hs, rag_hilb_var, deg;
     minors := []:
   end if;
   gb    := MSolveGroebnerLM([op(F),op(minors)], 0, vars,opts):
-  hs    := Groebner:-HilbertSeries(gb, vars, rag_hilb_var);
+  hs    := Groebner:-HilbertSeries(gb, tdeg(op(vars)), rag_hilb_var);
   if degree(denom(hs)) = 0 then 
     deg   := subs(rag_hilb_var=1, hs):
   else 
@@ -420,7 +420,7 @@ local rr, gb, hs, deg, rag_hilb_var, i, lhyp, hyp, gbsing, newlc, lc, k:
         nops(vars)-nops(F)-nops(eqs))]:
   gb:=MSolve:-MSolveGroebnerLM([op(eqs), seq(F[i]+rr(), i=1..nops(F)), op(lhyp)], 0, vars, 
             opts union {"linalg"=42}):
-  hs    := Groebner:-HilbertSeries(gb, vars, rag_hilb_var);
+  hs    := Groebner:-HilbertSeries(gb, tdeg(op(vars)), rag_hilb_var);
   if degree(denom(hs)) = 0 then 
     deg   := subs(rag_hilb_var=1, hs):
   else 
@@ -437,7 +437,7 @@ local rr, gb, hs, deg, rag_hilb_var, i, lhyp, hyp, gbsing, newlc, lc, k:
       gbsing:=MSolveGroebnerLM([op(eqs), op(singminors), 
               seq(F[i]+lc[k][i], i=1..nops(F)), hyp], 0, vars, 
               opts union {"linalg"=42}):
-      hs    := Groebner:-HilbertSeries(gb, vars, rag_hilb_var);
+      hs    := Groebner:-HilbertSeries(gb, tdeg(op(vars)), rag_hilb_var);
       if degree(denom(hs))=0 and subs(rag_hilb_var=1, hs) = deg and
         gbsing = [1] then 
         return lc[k];
@@ -971,7 +971,7 @@ local i, toremove, sols, positive, nnull, cstr, j, gb, hs, np, rag_sat_var1, rag
                   seq(Fam[j]-Fam[1],j=1..nops(Fam)), op(minors),
                   rag_sat_var1*Fam[1]-1, rag_sat_var2*cstr[1]-1], 0, 
                   [rag_sat_var2, rag_sat_var1, op(vars)], {"elim"=2} union opts):
-    hs:=Groebner:-HilbertSeries(gb, vars, rag_hilb_var):
+    hs:=Groebner:-HilbertSeries(gb, tdeg(op(vars)), rag_hilb_var):
     if degree(denom(hs))=0 then 
       toremove:=[cstr[i]]:
       break;
@@ -1456,7 +1456,7 @@ local gb, sols;
 end proc:
 
 InfiniteBranches:=proc(sys, ld, Inequalities, Inequations, vars, eps, opts:={})
-local hyp, sols1, sols2, j, smin, smax, i, newll, gb, sys0, gb0, boo, ll, sols, _T, rag_sat_var, rr, deg, hs, dim, spec, n, verb, isbounded, allvars;
+local hyp, sols1, sols2, j, smin, smax, i, newll, gb, sys0, gb0, boo, ll, sols, _T, rag_sat_var, rr, deg, hs, dim, spec, n, verb, isbounded, allvars, k;
 
   if type(subs(opts, "verb"), integer) then 
     verb:=subs(opts, "verb");
@@ -1522,12 +1522,25 @@ local hyp, sols1, sols2, j, smin, smax, i, newll, gb, sys0, gb0, boo, ll, sols, 
     sols2:=MSolveRealRoots([hyp-smax,
          op(sys0),rag_sat_var*eps-1],[rag_sat_var, op(allvars)],
          [op(Inequalities), eps, op(Inequations)], opts):
+    if sols2=[1] then
+      lprint("BUG in InfiniteBranches");
+    quit;
+    end if;
   else 
     sols1:=[-1, []]:
 
-    sols2:=MSolveRealRoots([hyp-1,
+    k:=1:
+    sols2:=MSolveRealRoots([hyp-k,
          op(sys0),rag_sat_var*eps-1],[rag_sat_var, op(allvars)],
          [op(Inequalities), eps, op(Inequations)], opts):
+    k:=k+1:
+    while sols2=[1] do
+      sols2:=MSolveRealRoots([hyp-k,
+         op(sys0),rag_sat_var*eps-1],[rag_sat_var, op(allvars)],
+         [op(Inequalities), eps, op(Inequations)], opts):
+      lprint("new sols2", sols2);
+      k:=k+1;
+    end do;
   end if;
   return sols1, sols2;
 end proc:

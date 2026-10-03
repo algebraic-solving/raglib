@@ -153,8 +153,8 @@ local j, n, newll, i, lp;
     return [op(ll), op(map(l->[l[1]+1], ll))];
   end if;
   newll := [];
-  for i from 1 to n-1 do
-    lp := combinat:-choose(n-1, i);
+  for i from 1 to n do
+    lp := combinat:-choose(n, i);
     for j from 1 to nops(lp) do 
       newll := [op(newll), op(map(l->Increment(l, lp[j]), ll))];
     end do;
@@ -252,8 +252,7 @@ local gb, i, v, hyp, pol, rr;
     pol:=singminors[i]:
     gb:=MSolveGroebnerLM([rag_sat_var*pol-1, op(eqs), op(F), hyp,
                           op(minors), op(singminors[1..i-1])], 
-                          0, [rag_sat_var, op(vars)], opts union
-                          {"linalg"=42}):
+                          0, [rag_sat_var, op(vars)], opts):
     if gb<>[1] then 
       return false;
     end if;
@@ -392,13 +391,13 @@ local rr, gb, rag_hilb_var, i, gb0, sat_var, newlc, lc, k, allvars:
   allvars:=[sat_var, op(vars), eps]:
   gb0:=MSolveGroebnerLM([sat_var*eps-1, 
                         op(eqs), seq(F[i]+rr()*eps, i=1..nops(F))], 0, allvars, 
-            opts union {"linalg"=42}):
+            opts):
   lc:=[[seq(1, i=1..nops(F))]]:
   while true do 
     for k from 1 to nops(lc) do 
       gb:=MSolveGroebnerLM([sat_var*eps-1, op(eqs), 
               seq(F[i]+lc[k][i]*eps, i=1..nops(F))], 0, allvars, 
-              opts union {"linalg"=42}):
+              opts):
       if gb=gb0 then 
         if HaveFiniteIntersections([sat_var*eps-1, op(eqs), 
                                     seq(F[i]+lc[k][i]*eps, i=1..nops(F))], 
@@ -419,7 +418,7 @@ local rr, gb, hs, deg, rag_hilb_var, i, lhyp, hyp, gbsing, newlc, lc, k:
   lhyp:=[seq(add(rr()*vars[i],i=1..nops(vars)),
         nops(vars)-nops(F)-nops(eqs))]:
   gb:=MSolve:-MSolveGroebnerLM([op(eqs), seq(F[i]+rr(), i=1..nops(F)), op(lhyp)], 0, vars, 
-            opts union {"linalg"=42}):
+            opts):
   hs    := Groebner:-HilbertSeries(gb, tdeg(op(vars)), rag_hilb_var);
   if degree(denom(hs)) = 0 then 
     deg   := subs(rag_hilb_var=1, hs):
@@ -431,15 +430,15 @@ local rr, gb, hs, deg, rag_hilb_var, i, lhyp, hyp, gbsing, newlc, lc, k:
   hyp:=add(rr()*vars[i],i=1..nops(vars))+rr():
   while true do 
     for k from 1 to nops(lc) do 
-      gb:=MSolveGroebnerLM([op(eqs), 
+      gb:=MSolve:-MSolveGroebnerLM([op(eqs), 
               seq(F[i]+lc[k][i], i=1..nops(F)), op(lhyp)], 0, vars, 
-              opts union {"linalg"=42}):
-      gbsing:=MSolveGroebnerLM([op(eqs), op(singminors), 
+              opts):
+      gbsing:=MSolve:-MSolveGroebnerLM([op(eqs), op(singminors), 
               seq(F[i]+lc[k][i], i=1..nops(F)), hyp], 0, vars, 
-              opts union {"linalg"=42}):
+              opts):
       hs    := Groebner:-HilbertSeries(gb, tdeg(op(vars)), rag_hilb_var);
       if degree(denom(hs))=0 and subs(rag_hilb_var=1, hs) = deg and
-        gbsing = [1] then 
+        gbsing = [1] then
         return lc[k];
       end if;
     end do;

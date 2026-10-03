@@ -16,33 +16,34 @@ computations and real root isolation of systems of equations with
 finitely many solutions. 
 
 Full documentation and examples can be found
-at [https://msolve.lip6.fr](https://msolve.lip6.fr).  
+at [https://msolve.lip6.fr](https://msolve.lip6.fr).
 Source code and installation instructions for
-[msolve](https://msolve.lip6.fr) can be found at  
+[msolve](https://msolve.lip6.fr) can be found at
 [https://github.com/algebraic-solving/msolve](https://github.com/algebraic-solving/msolve).
 
 ## Installation instructions
 
-- Install [msolve](https://msolve.lip6.fr)  
-- Install the file interface between [msolve](https://msolve.lip6.fr)
-  and `maple` which is given here:  
-  [https://github.com/algebraic-solving/msolve/blob/master/interfaces/msolve-to-maple-file-interface.mpl](https://github.com/algebraic-solving/msolve/blob/master/interfaces/msolve-to-maple-file-interface.mpl)  
-  (note that you may need here to adapt folder names given in lines 25
-  to 28 in the above file, depending on how your home directory is
-  organized)  
-  After the `msolve` package is created and installed in the folder
-  `savelibname` (say `/home/<your-login>/libs`), add the following
-  line to your `.mapleinit` file
-  which should be at the root of your home directory.  
-  `libname:=savelibname,libname:`   (e.g.
-  `libname:="/home/<your-login>/libs:",libname:`)  
-- add the following line to you `.mapleinit` file   
-  `kernelopts(includepath=<src_folder>):`  
-  where `src_folder` is the string containing the absolute path to the
-  folder containing the sources of `RAGlib`.  
-- after launching `maple`, just read the file `rag.mm`. 
+1. Install [msolve](https://msolve.lip6.fr) (make sure it is available in your PATH).
+2. Install the file interface package between [msolve](https://msolve.lip6.fr)
+  and `maple`:
+    - download the source file:
+      [https://github.com/algebraic-solving/msolve/blob/master/interfaces/msolve-to-maple-file-interface.mpl](https://github.com/algebraic-solving/msolve/blob/master/interfaces/msolve-to-maple-file-interface.mpl);
+    - (optional) choose a custom installation path at lines 25 and 26, in the
+      above file (default: `/home/<your-login>/libs`);
+    - run `maple msolve-to-maple-file-interface.mpl` from the file's directory.
+3. Install `RAGlib`:
+    - (optional) open `install.mm` and choose a custom installation path at line 6 (default: `/home/<your-login>/libs`);
+    - run `maple -q install.mm` from the repository root.
+
+4. If your maple packages have been installed in the folder at path `savelibname`, make sure you have the following line in your `.mapleinit` file, which should be at the root of your home directory:
+`libname:=savelibname,libname:` (e.g. `libname:="/home/<your-login>/libs:",libname:`).
 
 ## Basic usage
+After lauching maple, import `RAGlib` library as follows:
+```maple
+> with(RAG);
+                    [HasRealSolutions, PointsPerComponents]
+```
 
 At the moment, `RAGlib` provides two main functions:
 - `RAG[HasRealSolutions](eqs, pos, ineqs)` where eqs, pos, ineqs are lists

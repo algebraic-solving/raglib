@@ -1847,7 +1847,7 @@ end proc:
 
 PointsPerComponentsAlgebraic:=proc(Equations, Inequalities, Inequations, opts:={})
 local vars, boo, singminors, svars, spt, i, sineq, sols, _sol, spos,
-newsols, ls, var, hypsol, isempty, hyp, minors, gendeg, _pol; 
+newsols, ls, var, hypsol, isempty, hyp, minors, gendeg, _pol, ispt, _c; 
   if type(subs(opts, "isempty"), integer) then 
     isempty:=subs(opts, "isempty"):
   else 
@@ -1865,6 +1865,8 @@ newsols, ls, var, hypsol, isempty, hyp, minors, gendeg, _pol;
   end if;
   svars:=remove(member, [op(indets(Inequalities) union indets(Inequations))], vars):
   spt:=GoodFiberValue_svars(svars, Inequalities, Inequations);
+# Coordinates of solutions are encoded by isolating intervals
+  ispt:=map(_c->lhs(_c)=[rhs(_c), rhs(_c)], spt):
   spos:=subs(spt, Inequalities):
   sineq:=subs(spt, Inequations):
 
@@ -1875,7 +1877,7 @@ newsols, ls, var, hypsol, isempty, hyp, minors, gendeg, _pol;
     sols := MSolveRealRoots(Equations, vars, [op(spos), op(sineq)],
       opts):
     sols := AdmissibleSolutions(sols, nops(spos)):
-    sols:=map(_sol->[op(_sol), op(spt)], sols):
+    sols:=map(_sol->[op(_sol), op(ispt)], sols):
     return sols;
   end if;
 
@@ -1891,7 +1893,7 @@ newsols, ls, var, hypsol, isempty, hyp, minors, gendeg, _pol;
     sols := MSolveRealRoots([op(Equations), op(minors)], vars,
             [op(spos), op(sineq)], opts);
     sols:=AdmissibleSolutions(sols, nops(spos));
-    sols:=map(_sol->[op(_sol), op(spt)], sols):
+    sols:=map(_sol->[op(_sol), op(ispt)], sols):
   end if;
 
   if nops(sols) > 0 and isempty > 0 then 
@@ -1910,7 +1912,10 @@ newsols, ls, var, hypsol, isempty, hyp, minors, gendeg, _pol;
                                         subs(map(c->lhs(c)=rhs(c)[2], s), hypsol)], 
                                    op(s)], newsols);
   end if;
-  newsols:=map(_sol->[op(_sol), op(spt)], newsols):
+# The recursive call already assigns values to the variables of spt
+# which still appear in the constraints
+  newsols:=map(_sol->[op(_sol), 
+               op(remove(_c->member(lhs(_c), map(lhs, _sol)), ispt))], newsols):
   if nops(newsols) > 0 and isempty > 0 then 
      return newsols;
   end if;

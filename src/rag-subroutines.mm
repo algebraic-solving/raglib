@@ -611,21 +611,26 @@ end proc:
 
 ManageOverLapComputeBoundsSingular:=proc(Equations, Fam, singminors, minors, 
               gendeg, lgb, hyp, Positive, NotNull, vars, opts:={})
-local i, toadd, upol, _l, squpol, rr, sols, pol, gb1, gb2;
+local i, toadd, upol, _l, squpol, rr, sols, pol, gb0, gb1, gb2;
   toadd:=[]:
   upol:=1:
   for i from 1 to nops(singminors) do 
       pol := singminors[i]:
       if gendeg[i] = 0 then 
       else
-        gb1:=MSolveGroebner([op(lgb[i]), op(Equations), op(minors),
+        gb0:=MSolveGroebner([op(lgb[i]), op(Equations), op(minors),
                                 op(Fam), op(toadd),
                                 hyp-rag_sep_elem], 0, [op(vars),
+                                rag_sep_elem], opts):
+        gb1:=MSolveGroebner(gb0, 0, [op(vars),
                                 rag_sep_elem], opts union
                                 {"elim"=nops(vars)}):
         upol:=upol*gb1[1]:
-        gb2:=MSolveGroebner([rag_sat_var*pol-1, op(Equations), op(minors),
+        gb0:=MSolveGroebner([rag_sat_var*pol-1, op(Equations), op(minors),
                                 op(Fam), op(toadd), hyp-rag_sep_elem], 0,
+                                [rag_sat_var, op(vars), rag_sep_elem], 
+                                opts):
+        gb2:=MSolveGroebner(gb0, 0,
                                 [rag_sat_var, op(vars), rag_sep_elem], 
                                 opts union {"elim"=nops(vars)+1}):
         upol:=upol*gb2[1]:
@@ -1393,11 +1398,29 @@ newtsols, lc;
   return sols;
 end proc:
 
+RemoveEasyInconsistentBounds:=proc(hyp, bounds, FamPositive, Positive)
+local lc, vars, sgn, lvpos, lvneg, _b;
+  lc:={coeffs(hyp)}:
+  vars:=indets(hyp):
+  if nops(convert(map(sign,lc), set))=1 then 
+    sgn:=sign(lc[1]);
+    lvpos:=map(op,map(_v->map(_p->if primpart(_p)=_v then _v fi, [op(FamPositive), op(Positive)]), vars));
+    if convert(lvpos, set)=convert(vars, set) then 
+      return map(_b->if _b<>0 and sgn*sign(_b)>0 then _b fi, bounds);
+    end if;
+    lvneg:=map(op,map(_v->map(_p->if primpart(_p)=-_v then _v fi, [op(FamPositive), op(Positive)]), vars));
+    if convert(lvneg, set)=convert(vars, set) then 
+      return map(_b->if _b<>0 and sgn*sign(_b)<0 then _b fi, bounds);
+    end if;
+  else 
+    return bounds;
+  end if;
+end proc;
 
 UnboundedComponents:=proc(Equations, FamPositive, FamNotNull, Inequalities, Inequations, vars, opts:={})
 local cstr, i, verb, isempty, hyp, bounds, v, hypsol, ls,
 NewEquations, NewFamPositive, NewFamNotNull, NewInequations,
-NewInequalities, newvars, tsols, Fam, sols, Positive, NotNull;
+NewInequalities, newvars, tsols, Fam, sols, Positive, NotNull, newbounds;
 
   if type(subs(opts, "verb"), integer) then 
     verb:=subs(opts, "verb");
@@ -1419,6 +1442,14 @@ NewInequalities, newvars, tsols, Fam, sols, Positive, NotNull;
   hyp, bounds := ComputeBounds(Equations, Fam, Positive, NotNull, vars, opts);
   if verb>=1 then printf(" -> %a, %a", hyp, bounds); end if;
   if verb>=1 then printf("]") end if;
+#When all variables or their opposite are amongst the inequalities and when hyp
+#has coefficients all of the same sign, #one can prescribe the sign of the
+#fibers to consider
+  newbounds:=RemoveEasyInconsistentBounds(hyp, bounds, FamPositive, Positive):
+  if nops(newbounds)<> nops(bounds) and verb >=1 then 
+    printf("[skipped] -> %a", newbounds);
+  end if;
+  bounds:=newbounds;
   for i from 1 to nops(bounds) do
       v               := indets(hyp)[1];
       hypsol          := solve(hyp-bounds[i], v);
